@@ -20,12 +20,12 @@ sys.path.insert(0, setup_dir)
 with open('README.rst') as file:
     long_description = file.read()
 
-exec(open('SolarisPyTangoUtils/release.py').read())
-pack = ['SolarisPyTangoUtils']
+exec(open('SolarisUtils/release.py').read())
+pack = ['SolarisUtils']
 
 setup(name=name,
       version=version,
-      description='This is a class of devices providing correction algoritms.\nIts main pourpouse is to do electron close orbit correction. \nHowever it may be used for other close loop corrections based on response matrix and incremental change of actuators.\nIt implements SVD (Singular Value Decomposition) for calculation of inverted response matrix.\nFor the future it is planned to implement other algorithms, too.',
+      description= description,
       packages=pack,
 #      scripts=['scripts/Correction'],
       include_package_data=True,

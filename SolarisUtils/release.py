@@ -9,7 +9,7 @@
 
 """Release information for Python Package"""
 
-name = """SolarisPyTangoUtils"""
+name = """SolarisUtils"""
 version = "1.0.0"
 version_info = version.split(".")
 description = """This library provides various packages and modules to simplify certain tasks."""

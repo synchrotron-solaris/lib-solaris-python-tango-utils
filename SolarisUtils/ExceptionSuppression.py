@@ -46,7 +46,7 @@ class ExceptionSuppresser:
             try:
                 return _func(*_args)
             except _exceptions_included:
-                error_counter + 1
+                error_counter += 1
                 if error_counter > _limit_number:
                     raise
                 if _global_limit>0:
@@ -90,7 +90,7 @@ def suppress_exceptions(_limit,_func,_args, _exceptions_included=(Exception,), _
         try:
             return _func(*_args)
         except _exceptions_included:
-            error_counter + 1
+            error_counter += 1
             if error_counter > _limit:
                 raise
             with ExceptionSuppresser.global_lock:
