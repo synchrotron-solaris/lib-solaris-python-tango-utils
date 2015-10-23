@@ -23,42 +23,35 @@ class ExceptionSuppresser:
         with self.local_lock: # we made it thread safe
             self.local_counter = 0
 
-    def suppress_exceptions(self,_limit, _func,_args, _exceptions_included=(Exception,), _local_limit = 0,
-                           _global_limit = 0):
+    def suppress_exceptions(self,_limit, _func,_args, _exceptions_included=(Exception,), _global_limit = 0):
         """
         Run a specified function and repeat it up to _limit in case of exception. If the _limit number is crossed
-        exception is raised. It can also check for local object counter if _local_limit >0
-        or global error counter if _global_limit > 0
+        exception is raised. It checks for a local object counter and if _global_limit > 0 for global exception counter,
 
         :param _limit: suppress exceptions from _exceptions_included list (repeat _func(*_args) in case of an exception
-        raised ) until exception counter is less or equal this value
+        raised ) until a local (object) exception counter is less or equal this value
         :param _func: function to call
         :param _args: arguments to be passed to _func
         :param _exceptions_included: touple of exception classes to be suppressed
-        :param _local_limit: suppress the exception until the local (object) exception counter is less or equal this value and
-        include it in the counter
         :param _global_limit: suppress the exception until the global exception counter is less or equal this value and
         include it in the counter
         :return: return value of _func(*_args) or exception
         """
-        error_counter = 0
         while True:
             try:
                 return _func(*_args)
             except _exceptions_included:
-                error_counter += 1
-                if error_counter > _limit_number:
-                    raise
+                with self.local_lock:
+                    self.local_counter+=1
+                    if self.local_counter > _limit:
+                        raise
                 if _global_limit>0:
                     with ExceptionSuppresser.global_lock:
                         ExceptionSuppresser.global_counter+=1
                         if ExceptionSuppresser.global_counter > _global_limit:
                             raise
-                if _local_limit>0:
-                    with self.local_lock:
-                        self.local_counter+=1
-                        if self.local_counter > _local_limit:
-                            raise
+
+
 
 
 def reset_global_counter():
