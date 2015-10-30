@@ -55,7 +55,8 @@ def read_attributes_parallel(attributes, wait_time=0.5, errors_limit=5):
         :param attributes: list of attributes to read -(AttributePoxies)
         :param wait_time: How long to wait for responses.
         :param errors_limit: number of communication exceptions to be suppressed
-        :return: dictionary of replies
+        :return: dictionary of replies - attribute_proxy -> either DeviceAttributes or Exception.
+        If cenrtain relpy does not arrive on time it the related key will not be passed to the return
         '''
         es_object = es.ExceptionSuppresser() # we will do some exception suppression
         request_ids = {}
@@ -67,8 +68,9 @@ def read_attributes_parallel(attributes, wait_time=0.5, errors_limit=5):
         for ap in attributes:
             try:
                 request_ids[ap] = es_object.suppress_exceptions(errors_limit,ap.read_async, ())
-            except:
-                pass
+            except Exception as ex:
+                # mark that something went wrong
+                replies[ap] = ex
 
         time_counter = 0
         # read responses for request with applied timeout
@@ -87,25 +89,27 @@ def read_attributes_parallel(attributes, wait_time=0.5, errors_limit=5):
                 except PyTango.AsynReplyNotArrived:
                     # ignore not arrived replies
                     pass
+                except Exception as ex:
+                    # other exceptions are passed to replies result
+                    replies[ap] = ex
+                    request_ids.pop(ap)
 
-        # not arrived request is passed to be cleared in the future
-        with ExtendedAttributesGroup.global_lock:
-            for ap in request_ids:
-                if not (ap in ExtendedAttributesGroup.obsolete_attribute_read_requests):
-                    ExtendedAttributesGroup.obsolete_attribute_read_requests[ap] = []
-                ExtendedAttributesGroup.obsolete_attribute_read_requests[ap].append(request_ids[ap])
+        # cancel late requests
+        for ap in request_ids.keys():
+            ap.get_device_proxy().cancel_async_request(request_ids[ap])
 
         return replies
 
 
 def write_attributes_parallel(attributes, values, wait_time=0.5,  errors_limit=5):
         '''
-        Write attributes values in parallel.
+        Write attributes with values in parallel.
         :param attributes: list of attributes to wrtie to -(AttributePoxies)
         :param values: list of values
         :param wait_time: how long to wait for write confirmation.
         :param errors_limit: number of communication exceptions to be suppressed
-        :return: list of unconfirmed writes
+        :return: dictionary of results: attribute_proxy -> either exception or True (for confirmed writes),
+         for not confirmed writes no key is added
         '''
         es_object = es.ExceptionSuppresser()
         request_ids = {}
@@ -116,8 +120,10 @@ def write_attributes_parallel(attributes, values, wait_time=0.5,  errors_limit=5
         for ap in attributes:
             try:
                 request_ids[ap] = es_object.suppress_exceptions(errors_limit,ap.write_async, (values[i],))
-            except:
-                pass
+            except Exception as ex:
+                # mark in replies that something went wrong
+                replies[ap]=ex
+
             i += 1
 
         time_counter = 0
@@ -133,16 +139,18 @@ def write_attributes_parallel(attributes, values, wait_time=0.5,  errors_limit=5
                     es_object.suppress_exceptions(errors_limit, ap.write_reply, (request_ids[ap],))
                     # if reply arrived remove request from the list
                     request_ids.pop(ap)
+                    replies[ap] = True
                 except PyTango.AsynReplyNotArrived:
                     # ignore not arrived replies
                     pass
+                except Exception as ex:
+                    replies[ap] = ex
+                    request_ids.pop(ap)
 
-        # fill obsolete requests to be deleted in the future
-        with ExtendedAttributesGroup.global_lock:
-            for ap in request_ids:
-                    if not (ap in ExtendedAttributesGroup.obsolete_attribute_write_requests):
-                        ExtendedAttributesGroup.obsolete_attribute_write_requests[ap] = []
-                    ExtendedAttributesGroup.obsolete_attribute_write_requests[ap].append(request_ids[ap])
+
+        # cancel late requests
+        for ap in request_ids.keys():
+            ap.get_device_proxy().cancel_async_request(request_ids[ap])
 
         # return list of not confirmed writes
-        return request_ids.keys()
+        return replies
