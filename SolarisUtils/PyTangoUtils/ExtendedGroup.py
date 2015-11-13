@@ -152,5 +152,6 @@ def write_attributes_parallel(attributes, values, wait_time=0.5,  errors_limit=5
         for ap in request_ids.keys():
             ap.get_device_proxy().cancel_async_request(request_ids[ap])
 
+
         # return list of not confirmed writes
         return replies
