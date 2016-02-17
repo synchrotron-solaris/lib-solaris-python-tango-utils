@@ -1,7 +1,5 @@
-recursive-include Correction *.py
 recursive-include test *.py
 include *.rst
-include Correction.xmi
 include *.txt
 graft docs
 

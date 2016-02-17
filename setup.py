@@ -21,7 +21,7 @@ with open('README.rst') as file:
     long_description = file.read()
 
 exec(open('SolarisUtils/release.py').read())
-pack = ['SolarisUtils']
+pack = ['SolarisUtils', 'SolarisUtils.PyTangoUtils']
 
 setup(name=name,
       version=version,
