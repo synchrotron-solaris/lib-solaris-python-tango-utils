@@ -67,7 +67,7 @@ def read_attributes_parallel(attributes, wait_time=0.5, errors_limit=5):
         # send async read requests
         for ap in attributes:
             try:
-                request_ids[ap] = es_object.suppress_exceptions(errors_limit,ap.read_async, ())
+                request_ids[ap] = es_object.suppress_exceptions(errors_limit,ap.read_asynch, ())
             except Exception as ex:
                 # mark that something went wrong
                 replies[ap] = ex
