@@ -96,7 +96,7 @@ def read_attributes_parallel(attributes, wait_time=0.5, errors_limit=5):
 
         # cancel late requests
         for ap in request_ids.keys():
-            ap.get_device_proxy().cancel_async_request(request_ids[ap])
+            ap.get_device_proxy().cancel_asynch_request(request_ids[ap])
 
         return replies
 
